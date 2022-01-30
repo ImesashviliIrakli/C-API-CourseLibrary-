@@ -37,18 +37,73 @@ namespace CourseLibrary.Controllers
             return Ok(_mapper.Map<IEnumerable<AuthorDto>>(authors));
         }
 
-        [HttpGet("{authorId}")]
+        [HttpGet("{authorId}", Name = "GetAuthor")]
         public ActionResult<AuthorDto> GetAuthor(Guid authorId)
         {
             var author = _courseLibraryRepository.GetAuthor(authorId);
 
-            if(author == null)
+            if (author == null)
             {
                 return NotFound();
             }
 
             return Ok(_mapper.Map<AuthorDto>(author));
         }
+        #endregion
+
+        #region CreateAuthor
+        [HttpPost]
+        public ActionResult<AuthorDto> CreateAuthor(AuthorForCreationDto author)
+        {
+            var authorEntity = _mapper.Map<Author>(author);
+            _courseLibraryRepository.AddAuthor(authorEntity);
+            _courseLibraryRepository.Save();
+
+            var authorToReturn = _mapper.Map<AuthorDto>(authorEntity);
+            return CreatedAtRoute("GetAuthor",
+                new { authorId = authorToReturn.Id },
+                authorToReturn);
+        }
+        #endregion
+
+        #region UpdateAuthor
+        [HttpPut("{authorId}")]
+        public IActionResult UpdateAuthor(Guid authorId, AuthorForUpdateDto author)
+        {
+            if (_courseLibraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var authorFromRepo = _courseLibraryRepository.GetAuthor(authorId);
+
+            _mapper.Map(author, authorFromRepo);
+            _courseLibraryRepository.Save();
+
+            return CreatedAtRoute("GetAuthor",
+                new { authorId = authorFromRepo.Id},
+                authorFromRepo);
+
+        }
+        #endregion
+
+        #region DeleteAuthor
+        [HttpDelete("{authorId}")]
+        public ActionResult DeleteAuthor(Guid authorId)
+        {
+            var authorFromRepo = _courseLibraryRepository.GetAuthor(authorId);
+
+            if (authorFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            _courseLibraryRepository.DeleteAuthor(authorFromRepo);
+            _courseLibraryRepository.Save();
+
+            return NoContent();
+        }
+
         #endregion
     }
 }
